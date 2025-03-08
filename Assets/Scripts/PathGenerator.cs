@@ -45,7 +45,7 @@ public class PathGenerator : MonoBehaviour
                 pathPoints = GenerateSpiralPath(transform.position, bounding, 3, resolution);
                 break;
             case PathType.ZigZag:
-                pathPoints = GenerateZigZagPath(transform.position, pointsCount, 20f, 20f);
+                pathPoints = GenerateZigZagPath(transform.position, (int)bounding/10);
                 break;
             case PathType.SharpTurn:
                 pathPoints = GenerateSharpTurnPath(transform.position, 100f, 2, 175f);
@@ -179,20 +179,26 @@ public class PathGenerator : MonoBehaviour
         return points.ToArray();
     }
 
-    //
-    Vector3[] GenerateZigZagPath(Vector3 origin, int segments, float segmentLength, float zigZagWidth)
+    Vector3[] GenerateZigZagPath(Vector3 origin, int segments)
     {
         List<Vector3> points = new List<Vector3>();
         bool left = true;
 
+        // Varying the segment length based on the bounding value
+        float segmentLength = bounding * 0.1f;  // Adjust the multiplier as needed (higher values = longer segments)
+
+        // Varying the zigzag width based on the bounding value
+        float zigZagWidth = bounding * 0.5f;  // Adjust the multiplier as needed (higher values = wider zigzag)
+
+        // Generate the zigzag path
         for (int i = 0; i < segments; i++)
         {
             points.Add(origin + new Vector3(
-                left ? -zigZagWidth : zigZagWidth,
+                left ? -zigZagWidth : zigZagWidth,  // Alternates between left and right based on the width
                 0,
-                i * segmentLength
+                i * segmentLength  // Moves forward along the Z-axis by segmentLength
             ));
-            left = !left;
+            left = !left;  // Alternates the zigzag direction
         }
 
         return points.ToArray();

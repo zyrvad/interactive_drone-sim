@@ -1,12 +1,13 @@
+using UnityEngine;
+using Unity.MLAgents;
+using Unity.MLAgents.Sensors;
+using Unity.MLAgents.Actuators;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-
-using UnityEngine.AI;
-
-using Unity.MLAgents;
-using Unity.MLAgents.Actuators;
-using Unity.MLAgents.Sensors;
+using System;
+using System.Diagnostics;
+using Debug = UnityEngine.Debug;
+using Random = UnityEngine.Random;
 
 public class RL : Agent
 {
@@ -16,35 +17,34 @@ public class RL : Agent
 
     [Header("RL Params")]
     public float forceMultiplier = 10f;
-    public float torqueMultiplier = 100f;     
+    public float torqueMultiplier = 100f;  
+    public float proximityWeight = 2f;
+    public float proximityPenalty = -1f;
+    public float fovPenalty = -1f;   
+    public float fovLongPenalty = -2f;
+    public float fovWeight = 2f;
 
     [Header("Testing")]
     public bool testing = true;
     public bool disableMove = false;
     public float spawnOffset = 15f;
 
-    float bounds = 250;                                                                                                                        
-    float episodeCounter;	
-    float failTime = 0;
-
-   
+    [Header("Others")]
     public float maxSpeed = 50f;
-    private bool obstaclesEnabled;
-    
+
+
+    private float bounds = 250;                                                                                                                        
+    private double failTime = 0;
     private Vector3 screenCenter;
     private Vector3 screenMin;
     private Vector3 screenMax;
     private Vector3 previousPosition;
-
     private Vector3 previousBoundingBoxPosition;
     private Vector3 currentBoundingBoxVelocity;
-    private float episodeStartTime;
-    private bool cap = false;
-    
+
 
     public override void Initialize()
     {
-        episodeCounter += 1;
         previousPosition = transform.localPosition;
         agentCamera = GetComponent<Camera>();
         previousBoundingBoxPosition = Vector3.zero;
@@ -60,46 +60,20 @@ public class RL : Agent
     */ 
     public override void OnEpisodeBegin()
     {
-        episodeCounter += 1;
-        episodeStartTime = Time.time;
-
         PathFollower t = target.GetComponent(typeof(PathFollower)) as PathFollower;
         t.Respawn();
 
-        // Minimum spawn distance from the target
-        float minimumDistance = 5f;
-        Vector3 randomSpawn;
-
-        // Ensure agent's spawn point is not too close to the target
-        do
-        {
-            randomSpawn = new Vector3(Random.Range(-spawnOffset, spawnOffset), 0, Random.Range(-spawnOffset, spawnOffset));
-        } 
-        while (Vector3.Distance(target.localPosition + randomSpawn, target.localPosition) < minimumDistance);
+        List<int> validPos = new List<int> {-10, -9, -8, -7, -6, 6, 7, 8, 9, 10 };
+        Vector3 randomSpawn = new Vector3(validPos[Random.Range(0, validPos.Count)], 0, validPos[Random.Range(0, validPos.Count)]);
 
         Vector3 targetPosition = target.transform.localPosition;
 
-        if (!disableMove)
-        {
-            transform.localPosition = target.localPosition + randomSpawn;
-        }
-        else
-        {
-            transform.localPosition = new Vector3(50, 0, 30);
-        }
+        transform.localPosition = targetPosition + randomSpawn;
+        PID.transform.localPosition = targetPosition + randomSpawn;
 
-        // Ensure PID's spawn point is not too close to the target
-        Vector3 pidSpawn;
-        do
-        {
-            pidSpawn = new Vector3(Random.Range(-spawnOffset, spawnOffset), 0, Random.Range(-spawnOffset, spawnOffset));
-        } 
-        while (Vector3.Distance(target.localPosition + pidSpawn, target.localPosition) < minimumDistance);
-
-        PID.transform.localPosition = target.localPosition + pidSpawn;
         PID.transform.LookAt(targetPosition);
-
         transform.LookAt(targetPosition);
+
         previousPosition = transform.localPosition;
         previousBoundingBoxPosition = Vector3.zero;
         currentBoundingBoxVelocity = Vector3.zero;
@@ -159,24 +133,20 @@ public class RL : Agent
             x = act.ContinuousActions[0],
             y = act.ContinuousActions[3],
             z = act.ContinuousActions[1]
-        } * forceMultiplier * Time.deltaTime;
+        } * forceMultiplier;
         
         
-        if(cap){
-            movement = movement.normalized * (maxSpeed * Time.deltaTime);
-        }
+        transform.position += transform.right * Mathf.Clamp(movement.z, -maxSpeed, maxSpeed) * Time.deltaTime;
+        transform.position += transform.forward * Mathf.Clamp(movement.x, -maxSpeed, maxSpeed) * Time.deltaTime;
+        transform.position += transform.up * Mathf.Clamp(movement.y, -maxSpeed, maxSpeed) * Time.deltaTime;
+
 
         if(!disableMove){
-            transform.position += transform.TransformDirection(movement);
-
             float dist = Vector3.Distance(target.transform.localPosition, transform.localPosition);
-            AddReward(2*(1 - dist/40));
+            AddReward(proximityWeight*(1 - dist/40));
 
             if(dist > 60 && !testing){
-                AddReward(-50f);
-                EndEpisode();
-                PathFollower t = target.GetComponent(typeof(PathFollower)) as PathFollower;
-                t.Respawn();
+                AddReward(proximityPenalty);
             }
         }
         
@@ -192,22 +162,16 @@ public class RL : Agent
         bool targetVisible = screenMax.z > 0 && screenMin.x > 0 && screenMin.y > 0 && screenMin.x < Screen.width && screenMin.y < Screen.height;
         if (!targetVisible)
         {
-            //Debug.Log("Target cannot be seen");
-            AddReward(-3f);
-            if (failTime != 0)
+            AddReward(fovPenalty);
+            if (failTime == 0)
             {
-                if (Time.time - failTime >= 5 && !testing)
-                {
-                    Debug.Log("Target invisible for too long. Ending episode.");
-                    AddReward(-50f);
-                    EndEpisode();
-                    PathFollower t = target.GetComponent(typeof(PathFollower)) as PathFollower;
-                    t.Respawn();
-                }
+                failTime = DateTime.Now.TimeOfDay.TotalSeconds;
             }
-            else
+            else if (DateTime.Now.TimeOfDay.TotalSeconds - failTime >= 5)
             {
-                failTime = Time.time;
+                Debug.Log ("Out of view");
+                AddReward(fovLongPenalty);
+                failTime=0;
             }
         }
         else
@@ -217,24 +181,25 @@ public class RL : Agent
             float normalizedY = (screenMin.y + screenMax.y) / 2f / Screen.height;
             float screenOffset = Mathf.Sqrt(Mathf.Pow(normalizedX - 0.5f, 2) + Mathf.Pow(normalizedY - 0.5f, 2));
     
-            AddReward(2*(1f - screenOffset));
+            AddReward(fovWeight*(1f - screenOffset));
         }
-    
-        AddReward(-0.001f);
         
-
+        //Alignment reward
         Vector3 targetForward = target.transform.forward.normalized;
         Vector3 agentForward = transform.forward.normalized;
-        AddReward(10*Vector3.Dot(agentForward, targetForward));
+        AddReward(Vector3.Dot(agentForward, targetForward));
+
+
+        //Penalty for excessive actions
+        AddReward(-0.001f);
+
+
     }
 
     void OnTriggerEnter(Collider collision) {
         if(collision.CompareTag("Target") && !testing){
             //Debug.Log("Tagged target");
-            AddReward(50f);
-            EndEpisode();
-            PathFollower t = target.GetComponent(typeof(PathFollower)) as PathFollower;
-            t.Respawn();
+            AddReward(1f);
         }
     }
 
@@ -242,26 +207,13 @@ public class RL : Agent
     void FixedUpdate() 
     {
 	    // episode termination criteria
-	    if (Time.time - episodeStartTime > 60f && !testing) 
-	    {
-	        //EndEpisode();
-            //PathFollower t = target.GetComponent(typeof(PathFollower)) as PathFollower;
-            //t.Respawn();
-	    }
+        if(target.GetComponent<PathFollower>().lapCompleted){
+            EndEpisode();
+        }
 
         Vector3 currentVelocity = (transform.localPosition - previousPosition) / Time.deltaTime;
         float speed = currentVelocity.magnitude;
-        //Debug.Log($"Previous Position: {previousPosition}, Current Position: {transform.localPosition}");
         //Debug.Log("Current speed: " + speed);
-
-        if (speed > maxSpeed)
-        {
-            //Debug.Log("Speed exceeded limit");
-            cap = true;
-        }
-        else{
-            cap = false;
-        }
 
         previousPosition = transform.localPosition;
     }

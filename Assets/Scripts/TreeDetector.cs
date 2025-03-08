@@ -110,18 +110,19 @@ public class TreeDetector : MonoBehaviour
     public List<Vector4> GetTreeBoundingBoxes()
     {
         List<Vector4> boundingBoxes = new List<Vector4>();
-
-        foreach (Transform child in treeParent)
+        if(treeParent!=null)
         {
-            if (Vector3.Distance(child.position, transform.position) > cameraDistance) continue;
-
-            Vector4 bbox = CheckTreeVisibilityAndBoundingBox(child.gameObject);
-            if (bbox != Vector4.zero)
+             foreach (Transform child in treeParent)
             {
-                boundingBoxes.Add(bbox);
+                if (Vector3.Distance(child.position, transform.position) > cameraDistance) continue;
+
+                Vector4 bbox = CheckTreeVisibilityAndBoundingBox(child.gameObject);
+                if (bbox != Vector4.zero)
+                {
+                    boundingBoxes.Add(bbox);
+                }
             }
         }
-
         return boundingBoxes;
     }
 

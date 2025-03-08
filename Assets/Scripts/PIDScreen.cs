@@ -8,7 +8,7 @@ public class PIDScreen : MonoBehaviour
     [SerializeField] private Camera agentCamera;
     [Header("PID Params")]
     [SerializeField] private float trackingOffset = 20f;
-    public float spawnOffset = 15f;
+
     [Header("PID Maximum Speeds")]
     [SerializeField][Tooltip("In deg/s")] private float yaw = 90.0f; // Maximum yaw speed in degrees per second
     [SerializeField] private float right = 6.0f; // Maximum speed to the right
@@ -51,7 +51,6 @@ public class PIDScreen : MonoBehaviour
     public void Start()
     {
         treeDetector = transform.GetComponent<TreeDetector>();
-        //transform.localPosition = target.localPosition + new Vector3(20,0,0);
         rb = GetComponent<Rigidbody>();
         VMAX = new float[] { yaw, right, down, forward };
     }

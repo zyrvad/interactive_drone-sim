@@ -1,0 +1,74 @@
+{
+    "targetSpeed": {
+        "lesson_num": 3
+    },
+    "radius": {
+        "lesson_num": 4
+    },
+    "acc": {
+        "lesson_num": 3
+    },
+    "Track": {
+        "checkpoints": [
+            {
+                "steps": 5021769,
+                "file_path": "test_advanced\\test_advanced\\Track\\Track-5021769.onnx",
+                "reward": 26660.825819134712,
+                "creation_time": 1735527442.1624496,
+                "auxillary_file_paths": [
+                    "test_advanced\\test_advanced\\Track\\Track-5021769.pt"
+                ]
+            },
+            {
+                "steps": 5035626,
+                "file_path": "test_advanced\\test_advanced\\Track\\Track-5035626.onnx",
+                "reward": 24887.184619903564,
+                "creation_time": 1735527766.9653933,
+                "auxillary_file_paths": [
+                    "test_advanced\\test_advanced\\Track\\Track-5035626.pt"
+                ]
+            },
+            {
+                "steps": 5097569,
+                "file_path": "test_advanced\\test_advanced\\Track\\Track-5097569.onnx",
+                "reward": 3241.427657365799,
+                "creation_time": 1735528333.6305633,
+                "auxillary_file_paths": [
+                    "test_advanced\\test_advanced\\Track\\Track-5097569.pt"
+                ]
+            },
+            {
+                "steps": 5167975,
+                "file_path": "test_advanced\\test_advanced\\Track\\Track-5167975.onnx",
+                "reward": 76666.9523524046,
+                "creation_time": 1735528995.6410332,
+                "auxillary_file_paths": [
+                    "test_advanced\\test_advanced\\Track\\Track-5167975.pt"
+                ]
+            },
+            {
+                "steps": 5255646,
+                "file_path": "test_advanced\\test_advanced\\Track\\Track-5255646.onnx",
+                "reward": 54866.37534534931,
+                "creation_time": 1735529741.4048238,
+                "auxillary_file_paths": [
+                    "test_advanced\\test_advanced\\Track\\Track-5255646.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 5255646,
+            "file_path": "test_advanced\\test_advanced\\Track.onnx",
+            "reward": 54866.37534534931,
+            "creation_time": 1735529741.4048238,
+            "auxillary_file_paths": [
+                "test_advanced\\test_advanced\\Track\\Track-5255646.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.5.1+cu124"
+    }
+}
