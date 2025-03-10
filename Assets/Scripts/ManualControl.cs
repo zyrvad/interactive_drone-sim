@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class ManualControl : MonoBehaviour
 {
-    public float moveSpeed = 10f;      // Speed for linear movement
+    public float horizontalSpeed = 10f;      // Speed for linear movement
+    public float verticalSpeed = 3f;
     public float rotationSpeed = 100f; // Speed for yaw rotation
 
     void Update()
@@ -15,24 +16,30 @@ public class ManualControl : MonoBehaviour
     {
         Vector3 moveDirection = Vector3.zero;
 
-        // Forward, Backward, Left, Right
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
+        // Forward, Backward, Left, Right (Horizontal Movement)
+        if (Input.GetKey(KeyCode.W))
             moveDirection += transform.forward;
-        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
+        if (Input.GetKey(KeyCode.S))
             moveDirection -= transform.forward;
-        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
+        if (Input.GetKey(KeyCode.A))
             moveDirection -= transform.right;
-        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
+        if (Input.GetKey(KeyCode.D))
             moveDirection += transform.right;
 
-        // Up and Down
-        if (Input.GetKey(KeyCode.Q))
+        // Up and Down (Vertical Movement)
+        if (Input.GetKey(KeyCode.Space))
             moveDirection += transform.up;
-        if (Input.GetKey(KeyCode.E))
+        if (Input.GetKey(KeyCode.LeftShift))
             moveDirection -= transform.up;
 
-        // Apply movement
-        transform.position += moveDirection * moveSpeed * Time.deltaTime;
+        // Apply horizontal movement with horizontalSpeed
+        Vector3 horizontalMovement = new Vector3(moveDirection.x, 0, moveDirection.z).normalized * horizontalSpeed * Time.deltaTime;
+
+        // Apply vertical movement with verticalSpeed
+        Vector3 verticalMovement = new Vector3(0, moveDirection.y, 0).normalized * verticalSpeed * Time.deltaTime;
+
+        // Apply both horizontal and vertical movement
+        transform.position += horizontalMovement + verticalMovement;
     }
 
     void HandleRotation()
@@ -44,6 +51,7 @@ public class ManualControl : MonoBehaviour
             transform.Rotate(Vector3.up, yaw, Space.World);
         }
 
+        // Keyboard controls for yaw rotation
         if (Input.GetKey(KeyCode.LeftArrow))
             transform.Rotate(Vector3.up, -rotationSpeed * Time.deltaTime, Space.World);
         if (Input.GetKey(KeyCode.RightArrow))

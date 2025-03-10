@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ public class ScoreCalculator : MonoBehaviour
     private float totalTime = 0f;
     public float percent = 0f;
     public float timePercent = 0f;
+    public bool output = true;
 
     private Camera cam;
     private float currentOutOfViewTime = 0f; // Current duration the target is out of view
@@ -21,7 +23,8 @@ public class ScoreCalculator : MonoBehaviour
     void Start()
     {
         // Clear the output file at the start
-        File.WriteAllText($"{outputDirectory}/{transform.name}.csv", string.Empty);
+        if (output)
+            File.WriteAllText($"{outputDirectory}/{transform.name}.csv", string.Empty);
 
         cam = GetComponent<Camera>();
         cam.fieldOfView = FOV;
@@ -31,12 +34,12 @@ public class ScoreCalculator : MonoBehaviour
     void Update()
     {
         float dt = Time.deltaTime;
-    
+
         if (IsTargetVisible())
         {
             // Increment score if target is visible
             score += dt;
-    
+
             // Reset the out-of-view timer
             currentOutOfViewTime = 0f;
         }
@@ -44,22 +47,23 @@ public class ScoreCalculator : MonoBehaviour
         {
             // Increment the out-of-view timer if target is not visible
             currentOutOfViewTime += dt;
-    
+
             // Update maxOutOfViewTime every frame if the current out-of-view time is greater
             if (currentOutOfViewTime > maxOutOfViewTime)
             {
                 maxOutOfViewTime = currentOutOfViewTime;
             }
         }
-    
+
         totalTime += dt;
         percent = score / totalTime;
         timePercent = maxOutOfViewTime / totalTime; // Update timePercent to reflect maxOutOfViewTime as a percentage of total time
-    
+
         // Log total time, percentage of time target visible, and percentage of time out of view
-        Log($"{totalTime},{percent},{timePercent}");
+        if (output)
+            Log($"{totalTime},{percent},{timePercent}");
     }
-    
+
     void OnApplicationQuit()
     {
         // Ensure final maximum out-of-view time is set
@@ -67,12 +71,12 @@ public class ScoreCalculator : MonoBehaviour
         {
             maxOutOfViewTime = currentOutOfViewTime;
         }
-    
+
         Debug.Log($"Score: {percent}");
         Debug.Log($"Maximum out-of-view time: {maxOutOfViewTime}");
         Debug.Log($"Time Percent: {timePercent}");
     }
-    
+
 
     private void Log(string line)
     {
